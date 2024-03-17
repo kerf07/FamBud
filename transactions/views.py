@@ -39,6 +39,7 @@ class UploadFile(APIView):
                 if data[col].isnull().any(): #pd.isnull(row[col]):
                     data[col].fillna(0, inplace=True) #row[col] = 0
                     data[col].replace('NAN', 0, inplace=True)
+                    row['Кэшбек'].fillna(0, inplace=True)
             try:
                 if row['Дата платежа'] == 0:
                     pass
