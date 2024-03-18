@@ -3,7 +3,7 @@ from django.db import models
 
 # Create your models here.
 class Transaction(models.Model):
-    date_of_operation = models.DateField()
+    date_of_operation = models.DateTimeField()
     date_of_payment = models.DateField(null=True, blank=True)
     card_number = models.CharField(max_length=16, null=True, blank=True)
     status = models.CharField(max_length=100, null=True, blank=True)

@@ -1,5 +1,6 @@
 from django.db import IntegrityError
 from django.shortcuts import render
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
@@ -14,7 +15,7 @@ import pandas as pd
 
 
 def parse_date2(x):
-    if isinstance(x, float): #x == 'nan':
+    if isinstance(x, float):
         return 0
     else:
         return datetime.strptime(str(x), '%d.%m.%Y').strftime('%Y-%m-%d')
@@ -25,27 +26,24 @@ class UploadFile(APIView):
         file = request.FILES.get('file')
         data = pd.read_excel(file)
         data['Дата операции'] = data['Дата операции'].apply(
-            lambda x: datetime.strptime(x, '%d.%m.%Y %H:%M:%S').strftime('%Y-%m-%d'))
-        # if not data['Дата платежа'].empty:
-        # data['Дата платежа'] = data['Дата платежа'].astype(str).apply(lambda x: datetime.strptime(x, '%d.%m.%Y').strftime('%Y-%m-%d'))
+            lambda x: datetime.strptime(x, '%d.%m.%Y %H:%M:%S'))
         data['Дата платежа'] = data['Дата платежа'].apply(parse_date2)
         data['Сумма операции'] = data['Сумма операции'].astype(str).str.replace(',', '.')
         data['Сумма платежа'] = data['Сумма платежа'].astype(str).str.replace(',', '.')
         data['Бонусы (включая кэшбэк)'] = data['Бонусы (включая кэшбэк)'].astype(str).str.replace(',', '.')
         data['Сумма операции с округлением'] = data['Сумма операции с округлением'].astype(str).str.replace(',', '.')
+        for col in data.columns:
+            if data[col].isnull().any():
+                data.fillna({col: 0}, inplace=True)
+                data.replace({col: 'NAN'}, {col: 0}, inplace=True)
         transactions = []
         for index, row in data.iterrows():
-            for col in data.columns:
-                if data[col].isnull().any(): #pd.isnull(row[col]):
-                    data[col].fillna(0, inplace=True) #row[col] = 0
-                    data[col].replace('NAN', 0, inplace=True)
-                    row['Кэшбек'].fillna(0, inplace=True)
             try:
                 if row['Дата платежа'] == 0:
                     pass
                 else:
                     transaction = Transaction(
-                        date_of_operation=row['Дата операции'],
+                        date_of_operation=timezone.make_aware(row['Дата операции'], timezone.get_current_timezone()),
                         date_of_payment=row['Дата платежа'],
                         card_number=row['Номер карты'],
                         status=row['Статус'],
