@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
-from .models import Transaction, Budgets, Categories
+from .models import Transaction, Budgets, Categories, Dictionary
 from .serializers import TransactionSerializer, CategoriesSerializer, BudgetsSerializer
 from datetime import datetime
 # from decimal import Decimal
@@ -42,6 +42,12 @@ class UploadFile(APIView):
                 if row['Дата платежа'] == 0:
                     pass
                 else:
+                    in_dictionary = False
+                    try:
+                        dictionary_obj = Dictionary.objects.get(cat_name_in_report=row['Категория'], descr_in_report=row['Описание'], mcc_in_report=row['MCC'])
+                        in_dictionary = True
+                    except Dictionary.DoesNotExist:
+                        in_dictionary = False
                     transaction = Transaction(
                         date_of_operation=timezone.make_aware(row['Дата операции'], timezone.get_current_timezone()),
                         date_of_payment=row['Дата платежа'],
@@ -52,12 +58,14 @@ class UploadFile(APIView):
                         payment_amount=row['Сумма платежа'].replace(',', '.'),
                         payment_currency=row['Валюта платежа'],
                         cashback=row['Кэшбэк'],
-                        category=row['Категория'],
+                        category=dictionary_obj.get_category_name() if in_dictionary and dictionary_obj.weight > 2 else row['Категория'],
                         mcc=row['MCC'],
                         description=row['Описание'],
                         bonuses=row['Бонусы (включая кэшбэк)'],
                         rounding_for_savings=row['Округление на инвесткопилку'],
-                        operation_amount_rounded=row['Сумма операции с округлением'].replace(',', '.')
+                        operation_amount_rounded=row['Сумма операции с округлением'].replace(',', '.'),
+                        suggested_category=dictionary_obj.get_category_name() if in_dictionary and dictionary_obj.weight < 3 else '',
+                        original_category=row['Категория'] if in_dictionary and dictionary_obj.weight > 2 else ''
                     )
                     transaction.full_clean()
                     transactions.append(transaction)

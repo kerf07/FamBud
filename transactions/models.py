@@ -41,5 +41,11 @@ class Dictionary(models.Model):
     category_id = models.ForeignKey(Categories, null=True, on_delete=models.SET_NULL)
     weight = models.DecimalField(max_digits=10, default=0, decimal_places=2)
 
+    def get_category_name(self):
+        if self.category_id:
+            return self.category_id.name
+        else:
+            return None
+
     class Meta:
         unique_together = ['cat_name_in_report', 'descr_in_report', 'mcc_in_report']

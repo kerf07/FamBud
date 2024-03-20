@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import {Container, Table } from 'react-bootstrap';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 const ImportPage = () => {
     const [transactions, setTransactions] = useState([]);
@@ -60,7 +61,7 @@ const ImportPage = () => {
           <tbody>
           {transactions.map((transaction, index) => (
               <tr key={index}>
-                <td>{transaction.date_of_operation}</td>
+                <td>{format(transaction.date_of_operation, 'dd-MM-yyyy HH:mm:ss')}</td>
                 <td>{transaction.date_of_payment}</td>
                 <td>{transaction.card_number}</td>
                 <td>{transaction.status}</td>
